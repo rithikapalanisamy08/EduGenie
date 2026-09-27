@@ -1,140 +1,272 @@
+```html
 <!DOCTYPE html>
+<html lang="en">
 
-<html>
 <head>
-    <title>EduGenie</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>EduGenie - AI Learning Companion</title>
+
     <link rel="stylesheet" href="/static/style.css">
 </head>
 
 <body>
 
-```
-<div class="container">
+    <div class="container">
 
-    <h1>EduGenie 🎓</h1>
-
-    <p class="subtitle">
-        Your AI-powered learning companion
-    </p>
-
-    <div class="feature-grid">
-
-        <div class="feature-card">
-            <h2>🤖 Question & Answer</h2>
-            <p>Ask questions and get AI-powered answers.</p>
-
-            <form action="/ask" method="post">
-                <textarea
-                    name="question"
-                    rows="4"
-                    placeholder="Ask your question..."
-                    required></textarea>
-
-                <button type="submit">Ask Question</button>
-            </form>
-        </div>
+        <!-- Header -->
+        <header class="header">
+            <h1>EduGenie</h1>
+            <p>AI-Powered Learning Companion</p>
+        </header>
 
 
-        <div class="feature-card">
-    <h2>📝 Quiz Generation</h2>
+        <!-- Main Form -->
+        <main class="main-content">
 
-    <p>
-        Paste a passage and generate 3 multiple-choice questions.
-    </p>
+            <div class="card">
 
-    <form action="/quiz" method="post">
+                <h2>Learn Smarter with EduGenie</h2>
 
-        <textarea
-            name="passage"
-            rows="6"
-            placeholder="Paste your passage here..."
-            required></textarea>
-
-        <button type="submit">
-            Generate Quiz
-        </button>
-
-    </form>
-</div>
+                <p class="description">
+                    Select a learning task, enter your content,
+                    and let EduGenie assist you.
+                </p>
 
 
-        <div class="feature-card">
-            <h2>📝 Quiz Generation</h2>
-            <p>Generate quizzes for your learning and practice.</p>
+                <!-- Task Selection -->
+                <form id="eduForm">
 
-            <form action="/quiz" method="post">
-                <input
-                    type="text"
-                    name="topic"
-                    placeholder="Enter quiz topic..."
-                    required>
+                    <label for="task">
+                        Select Task
+                    </label>
 
-                <button type="submit">Generate Quiz</button>
-            </form>
-        </div>
+                    <select id="task" name="task" required>
+
+                        <option value="">
+                            -- Select a Task --
+                        </option>
+
+                        <option value="explain">
+                            Explain
+                        </option>
+
+                        <option value="qna">
+                            QnA
+                        </option>
+
+                        <option value="quiz">
+                            Quiz
+                        </option>
+
+                        <option value="summary">
+                            Summary
+                        </option>
+
+                        <option value="learning-path">
+                            Recommend Path
+                        </option>
+
+                    </select>
 
 
-        <div class="feature-card">
-            <h2>📖 Summarization</h2>
-            <p>Convert long educational text into concise summaries.</p>
+                    <!-- User Input -->
+                    <label for="userInput">
+                        Enter Your Input
+                    </label>
 
-            <form action="/summary" method="post">
-                <textarea
-                    name="text"
-                    rows="4"
-                    placeholder="Paste your text here..."
-                    required></textarea>
+                    <textarea
+                        id="userInput"
+                        name="userInput"
+                        rows="8"
+                        placeholder="Enter your question, topic, or passage here..."
+                        required>
+                    </textarea>
 
-                <button type="submit">Summarize</button>
-            </form>
-        </div>
 
-<div class="feature-card">
-    <h2>🛤️ Learning Path</h2>
+                    <!-- Submit Button -->
+                    <button type="submit">
+                        Generate
+                    </button>
 
-    <p>
-        Get a personalized learning path based on your level.
-    </p>
+                </form>
 
-    <form action="/learning-path" method="post">
 
-        <input
-            type="text"
-            name="topic"
-            placeholder="Enter a topic..."
-            required>
+                <!-- Result Container -->
+                <div
+                    id="result"
+                    class="result-container">
 
-        <select name="level" required>
+                    <h3>Result</h3>
 
-            <option value="">
-                Select your level
-            </option>
+                    <p>
+                        Your AI-generated result will appear here.
+                    </p>
 
-            <option value="Beginner">
-                Beginner
-            </option>
+                </div>
 
-            <option value="Intermediate">
-                Intermediate
-            </option>
+            </div>
 
-            <option value="Advanced">
-                Advanced
-            </option>
+        </main>
 
-        </select>
 
-        <button type="submit">
-            Create Learning Path
-        </button>
+        <!-- Footer -->
+        <footer class="footer">
 
-    </form>
-</div>
+            <p>
+                EduGenie | AI-Powered Learning Companion
+            </p>
+
+        </footer>
 
     </div>
 
-</div>
-```
+
+    <!-- Frontend Interaction -->
+    <script>
+
+        const form = document.getElementById("eduForm");
+
+        const task = document.getElementById("task");
+
+        const userInput = document.getElementById("userInput");
+
+        const result = document.getElementById("result");
+
+
+        form.addEventListener("submit", async function(event) {
+
+            event.preventDefault();
+
+            const selectedTask = task.value;
+
+            const input = userInput.value.trim();
+
+
+            if (!selectedTask || !input) {
+
+                result.innerHTML = `
+                    <h3>Error</h3>
+                    <p>Please select a task and enter your input.</p>
+                `;
+
+                return;
+            }
+
+
+            result.innerHTML = `
+                <h3>Processing...</h3>
+                <p>EduGenie is generating your response...</p>
+            `;
+
+
+            let endpoint = "";
+
+
+            if (selectedTask === "explain") {
+
+                endpoint = "/explain";
+
+            }
+
+            else if (selectedTask === "qna") {
+
+                endpoint = "/ask";
+
+            }
+
+            else if (selectedTask === "quiz") {
+
+                endpoint = "/quiz";
+
+            }
+
+            else if (selectedTask === "summary") {
+
+                endpoint = "/summary";
+
+            }
+
+            else if (selectedTask === "learning-path") {
+
+                endpoint = "/learning-path";
+
+            }
+
+
+            try {
+
+                const formData = new FormData();
+
+
+                if (selectedTask === "explain") {
+
+                    formData.append("topic", input);
+
+                }
+
+                else if (selectedTask === "qna") {
+
+                    formData.append("question", input);
+
+                }
+
+                else if (selectedTask === "quiz") {
+
+                    formData.append("passage", input);
+
+                }
+
+                else if (selectedTask === "summary") {
+
+                    formData.append("text", input);
+
+                }
+
+                else if (selectedTask === "learning-path") {
+
+                    formData.append("topic", input);
+
+                    formData.append("level", "Beginner");
+
+                }
+
+
+                const response = await fetch(
+                    endpoint,
+                    {
+                        method: "POST",
+                        body: formData
+                    }
+                );
+
+
+                const data = await response.text();
+
+
+                result.innerHTML = data;
+
+            }
+
+
+            catch (error) {
+
+                result.innerHTML = `
+                    <h3>Error</h3>
+                    <p>
+                        Something went wrong.
+                        Please try again.
+                    </p>
+                `;
+
+            }
+
+        });
+
+    </script>
 
 </body>
+
 </html>
+```
