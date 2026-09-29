@@ -1,8 +1,6 @@
 fastapi
 uvicorn
 google-genai
-transformers
-torch
 jinja2
 python-dotenv
 pydantic

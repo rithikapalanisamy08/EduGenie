@@ -1,13 +1,15 @@
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import os
+from google import genai
+from dotenv import load_dotenv
 
-MODEL_NAME = "MBZUAI/LaMini-Flan-T5-783M"
+load_dotenv()
 
-print("Loading LaMini-Flan-T5 model...")
+api_key = os.getenv("GEMINI_API_KEY")
 
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+if not api_key:
+    raise ValueError("GEMINI_API_KEY not found")
 
-print("Model loaded successfully!")
+client = genai.Client(api_key=api_key)
 
 
 def explain_concept(topic):
@@ -24,30 +26,9 @@ Include:
 4. Short conclusion
 """
 
-    inputs = tokenizer(
-        prompt,
-        return_tensors="pt",
-        max_length=512,
-        truncation=True
+    response = client.models.generate_content(
+        model="gemini-3.8-flash",
+        contents=prompt
     )
 
-    outputs = model.generate(
-        **inputs,
-        max_new_tokens=300,
-        do_sample=False
-    )
-
-    explanation = tokenizer.decode(
-        outputs[0],
-        skip_special_tokens=True
-    )
-
-    return explanation
-
-
-if __name__ == "__main__":
-
-    explanation = explain_concept("Artificial Intelligence")
-
-    print("\nEduGenie Concept Explanation:")
-    print(explanation)
+    return response.text 
