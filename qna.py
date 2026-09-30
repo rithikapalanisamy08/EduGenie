@@ -14,14 +14,16 @@ client = genai.Client(api_key=api_key)
 
 def ask_question(question):
     response = client.models.generate_content(
-        model="gemini-flash-latest",
+       model="gemini-3.6-flash",
         contents=question
     )
-
     return response.text
 
 
 if __name__ == "__main__":
-    answer = ask_question("What is Artificial Intelligence?")
+    answer = ask_question(
+        "What is Artificial Intelligence and how is it used in everyday life?"
+    )
+
     print("\nEduGenie Answer:")
     print(answer)
