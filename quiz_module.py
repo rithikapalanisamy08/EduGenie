@@ -1,3 +1,4 @@
+
 import os
 import json
 import re
@@ -16,124 +17,127 @@ client = genai.Client(api_key=api_key)
 
 
 def clean_json_block(text):
-    """Remove Markdown code blocks from Gemini JSON response."""
-
+    """Extract JSON from the AI response."""
     text = text.strip()
-
-    if text.startswith("```json"):
-        text = text[7:]
-
-    elif text.startswith("```"):
-        text = text[3:]
-
-    if text.endswith("```"):
-        text = text[:-3]
-
+    text = re.sub(r"^```(?:json)?\s*", "", text)
+    text = re.sub(r"\s*```$", "", text)
     return text.strip()
 
 
 def generate_quiz(passage):
+    """Generate a quiz based on the user's actual input."""
+
+    if not passage or not passage.strip():
+        return {"error": "Please enter a topic or passage first."}
 
     prompt = f"""
-Create exactly 3 multiple-choice questions from the passage below.
+You are EduGenie, an educational quiz generator.
 
-Each question must contain:
-- question
-- four options: A, B, C, D
-- correct_answer
+USER INPUT:
+{passage}
 
-The questions must be based only on the given passage.
+TASK:
+Create exactly 3 multiple-choice questions based ONLY on
+the user's input above.
 
-Return ONLY valid JSON.
+STRICT RULES:
+1. Identify the actual topic of the user's input first.
+2. Every question must test knowledge of that topic.
+3. Do not use fixed, sample, or unrelated questions.
+4. Do not assume the topic is Python.
+5. If the input is a short topic name, create questions
+   about that topic using your knowledge.
+6. If the input is a passage, prioritize information
+   explicitly present in the passage.
+7. Each question must have exactly four options: A, B, C, D.
+8. Only one option must be correct.
+9. correct_answer must contain only A, B, C, or D.
+10. Avoid duplicate questions.
+11. Return ONLY a valid JSON array. No Markdown.
 
-Required JSON format:
-
+FORMAT:
 [
   {{
     "question": "Question text",
     "options": {{
-      "A": "Option A",
-      "B": "Option B",
-      "C": "Option C",
-      "D": "Option D"
+      "A": "First option",
+      "B": "Second option",
+      "C": "Third option",
+      "D": "Fourth option"
     }},
     "correct_answer": "A"
   }}
 ]
-
-Passage:
-{passage}
 """
 
-    max_retries = 3
-
-    for attempt in range(max_retries):
-
+    for attempt in range(3):
         try:
             response = client.models.generate_content(
                 model="gemini-3.6-flash",
                 contents=prompt
             )
 
-            cleaned_response = clean_json_block(response.text)
+            if not response.text:
+                raise ValueError("The AI returned an empty response.")
 
-            quiz = json.loads(cleaned_response)
+            cleaned = clean_json_block(response.text)
+            quiz = json.loads(cleaned)
 
             if not isinstance(quiz, list) or len(quiz) != 3:
-                raise ValueError("Quiz must contain exactly 3 questions.")
+                raise ValueError("Expected exactly 3 questions.")
+
+            for question in quiz:
+                if not isinstance(question, dict):
+                    raise ValueError("Invalid question format.")
+
+                if not question.get("question"):
+                    raise ValueError("A question is missing its text.")
+
+                options = question.get("options")
+
+                if not isinstance(options, dict) or set(options) != {
+                    "A", "B", "C", "D"
+                }:
+                    raise ValueError(
+                        "Each question must have options A, B, C and D."
+                    )
+
+                answer = question.get("correct_answer")
+
+                if answer not in {"A", "B", "C", "D"}:
+                    raise ValueError("Invalid correct answer.")
 
             return quiz
 
         except Exception as e:
-
             error_message = str(e)
+            temporary = (
+                "503" in error_message
+                or "UNAVAILABLE" in error_message
+                or "429" in error_message
+                or "RESOURCE_EXHAUSTED" in error_message
+            )
 
-            if "503" in error_message or "UNAVAILABLE" in error_message:
+            if temporary and attempt < 2:
+                time.sleep(2 ** attempt)
+                continue
 
-                if attempt < max_retries - 1:
-
-                    wait_time = 2 ** attempt
-
-                    print(
-                        f"Gemini temporarily unavailable. "
-                        f"Retrying in {wait_time} seconds..."
-                    )
-
-                    time.sleep(wait_time)
-
-                else:
-
-                    return {
-                        "error": (
-                            "Gemini is currently experiencing high demand. "
-                            "Please try again shortly."
-                        )
-                    }
-
-            else:
-
+            if temporary:
                 return {
-                    "error": f"Quiz generation failed: {e}"
+                    "error": (
+                        "Gemini is temporarily unavailable or busy. "
+                        "Please try again shortly."
+                    )
                 }
+
+            return {"error": f"Quiz generation failed: {e}"}
 
 
 if __name__ == "__main__":
-
     sample_passage = """
     Machine Learning is a branch of Artificial Intelligence.
-    It allows computers to learn patterns from data without being
-    explicitly programmed for every task. Machine Learning includes
-    supervised learning, unsupervised learning, and reinforcement learning.
+    It allows computers to learn patterns from data.
     """
 
     quiz = generate_quiz(sample_passage)
-
-    print("\nEduGenie Quiz:")
-
-    print(
-        json.dumps(
-            quiz,
-            indent=4,
-            ensure_ascii=False
-        )
-    )
+    print(json.dumps(quiz, indent=4, ensure_ascii=False))
